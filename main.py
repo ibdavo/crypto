@@ -1,20 +1,9 @@
+from ast import Try
 from logging import exception
 import ccxt
 import config
 
-# Binance
-exchange_id = 'binance'
-exchange_class = getattr(ccxt, exchange_id)
-exchange = exchange_class({
-    'apiKey': 'YY7esBK7WgJcnbHZB4E9lFaruKgPaBvJNCMZOYvtNveRMWiaaiFu4UvukYm5w4cc',
-    'secret': 'XkMoQMP74FSFjbysonVqeGhS5Ruf0xkuo29sd3UH8V7WkvbdgHUjdWR0E118QUXV',
-    'timeout': 30000,
-    'enableRateLimite': True,
-})
-
-# API Key: YY7esBK7WgJcnbHZB4E9lFaruKgPaBvJNCMZOYvtNveRMWiaaiFu4UvukYm5w4cc
-# Secret Key: XkMoQMP74FSFjbysonVqeGhS5Ruf0xkuo29sd3UH8V7WkvbdgHUjdWR0E118QUXV
-
+exchange = {}
 
 def trade(request):
     try:
@@ -28,51 +17,99 @@ def trade(request):
 
         if data is None:
             raise Exception('Request rejected, empty request.')
-
-        return test_binance()
+        try:
+            determine_account(data)
+            return_response('success', "test_account", 'Account test!')
+        except Exception as e:
+            return return_response('error', str(e), "Determine account failed")
+        return return_response('success', 'account determined')
+        # return get_account_balance()
+        # return get_accounts()
+        # return test_binance()
         # print(binance)
 
         # return get_account_balance()
 
     except Exception as e:
-        return {
-            'status': 'error',
-            'message': str(e),
-            'comments': '### Error in request params.'
-        }
+        return return_response('error', str(e), 'Error in request params')
+
+def determine_account(data):
+    if 'account' not in data.keys():
+        raise Exception('Account info missing or invalid.')
+    if 'exchange' not in data.keys():
+        raise Exception('Exchange info missing or invalid')
+    if 'account_type' not in data.keys():
+        raise Exception('Account info missing or invalid')
+    print("Account: {}".format(data['account'])) 
+    print("test")
+    # print(config.accounts[data['account']])
+
+    # Account
+    if config.accounts[data['account']] is None:
+        raise Exception('Invalid account')
+    # Exchange
+    if config.accounts[data['account']][data['exchange']] is None:
+        raise Exception('Account exchange is missing of invalid')
+    # Account Type
+    if config.accounts[data['account']][data['exchange']][data['account_type']] is None:
+        raise Exception('Account exchange account_type is missing of invalid')
 
 
-def order():
-    try:
-        limit_order = exchange.create_limit_buy_order(
-            'ETH/BTC', '0.01', '0.014')
-        return {
-            'status': 'success',
-            'message': 'order placed',
-        }
+    try: 
+        exchange = ccxt.binanceus({
+            'apiKey' : config.API_KEY_BINANCE,
+            'secret': config.SECRET_KEY_BINANCE,
+        })
     except Exception as e:
-        return {
-            'status': 'error',
-            'message': str(e),
-            'comments': '### Order error.'
-        }
+        return return_response('error', str(e), 'Exchange init failed.')
+    
+    return config.accounts[data['account']]
+        
+    
 
+# def order():
+#     try:
+#         limit_order = exchange.create_limit_buy_order(
+#             'ETH/BTC', '0.01', '0.014')
+#         return {
+#             'status': 'success',
+#             'message': 'order placed',
+#         }
+#     except Exception as e:
+#         return return_response('error', str(e), 'Order error')
 
-def get_account_balance():  # TODO pass exchange?
-    try:
-        account_balance = exchange.fetch_balance()  # binance.fetch_balance()
-        # print('### balance ' + account_balance)
-        return {
-            'status': 'success',
-            'message': account_balance,
-            'comments': 'balance retrieved'
-        }
-    except Exception as e:
-        return {
-            'status': 'error',
-            'message': str(e),
-            'comments': 'Account balance error.'
-        }
+# def get_account_balance():  # TODO pass exchange?
+#     try:
+#         exchange = ccxt.binanceus({
+#             'apiKey' : config.API_KEY_BINANCE,
+#             'secret': config.SECRET_KEY_BINANCE,
+#         })
+
+#         account_balance = exchange.fetch_balance()  # binance.fetch_balance()
+#         # print('### balance ' + account_balance)
+#         for balance in account_balance:
+#             print(balance)
+#         return {
+#             'status': 'success',
+#             'message': account_balance,
+#             'comments': 'balance retrieved'
+#         }
+#     except Exception as e:
+#         return return_response('error', str(e), 'Account balance error.')
+
+# def get_accounts():
+#     try:
+#         exchange = ccxt.binanceus({
+#             'apiKey' : config.API_KEY_BINANCE,
+#             'secret': config.SECRET_KEY_BINANCE,
+#         })
+
+#         accounts = exchange.account()
+#         # balance = exchange.fetch_balance()
+#         print(accounts)
+#         return return_response('success', accounts, 'account status')
+#     except Exception as e:
+#         return return_response('error', str(e))
 
 
 def test_binance():
@@ -105,6 +142,13 @@ def test_binance():
 
     return {
         'status': 'test'
+    }
+
+def return_response(status, msg, comments = ''):
+    return {
+        'status' : status,
+        'message': msg,
+        'comments' : comments
     }
 
 # https://testnet.binance.vision/ paper trading
