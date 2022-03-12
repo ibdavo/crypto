@@ -3,8 +3,6 @@ from logging import exception
 import ccxt
 import config
 
-exchange = {}
-
 def trade(request):
     try:
         # get data
@@ -18,10 +16,13 @@ def trade(request):
         if data is None:
             raise Exception('Request rejected, empty request.')
         try:
-            determine_account(data)
+            exchange = determine_account(data)
+            print('remove me')
             return_response('success', "test_account", 'Account test!')
         except Exception as e:
             return return_response('error', str(e), "Determine account failed")
+
+        test_binance(exchange)
         return return_response('success', 'account determined')
         # return get_account_balance()
         # return get_accounts()
@@ -41,7 +42,6 @@ def determine_account(data):
     if 'account_type' not in data.keys():
         raise Exception('Account info missing or invalid')
     print("Account: {}".format(data['account'])) 
-    print("test")
     # print(config.accounts[data['account']])
 
     # Account
@@ -54,29 +54,41 @@ def determine_account(data):
     if config.accounts[data['account']][data['exchange']][data['account_type']] is None:
         raise Exception('Account exchange account_type is missing of invalid')
 
+    # api_key = config.accounts[data['account']][data['exchange']][data['account_type']][data["api_key"]]
+    # secret = config.accounts[data['account']][data['exchange']][data['account_type']][data["secret"]]
 
-    try: 
-        exchange = ccxt.binanceus({
-            'apiKey' : config.API_KEY_BINANCE,
-            'secret': config.SECRET_KEY_BINANCE,
-        })
-    except Exception as e:
-        return return_response('error', str(e), 'Exchange init failed.')
+    print(config.accounts[data['account']][data['exchange']][data['account_type']]['api_key'])
+    print(config.accounts[data['account']][data['exchange']][data['account_type']]['api_key'])
+    # print('secret: ' + secret)
+    if 'binanceus' in config.accounts[data['account']]: 
+        print("binance us...")
+    # if config.accounts[data['account']][data['exchange']] == 'binanceus':
+        try: 
+            exchange = ccxt.binanceus({
+                'apiKey' : config.accounts[data['account']][data['exchange']][data['account_type']]['api_key'],
+                'secret': config.accounts[data['account']][data['exchange']][data['account_type']]['secret'],
+            })
+            
+        except Exception as e:
+            return return_response('error', str(e), 'Exchange init failed.')
+    else:
+        raise Exception('Unknown exchange')
+
+    print("exchange:")    
+    return exchange
     
-    return config.accounts[data['account']]
+
+def order(exchange):
+    try:
+        limit_order = exchange.create_limit_buy_order(
+            'ETH/BTC', '0.01', '0.014')
         
-    
-
-# def order():
-#     try:
-#         limit_order = exchange.create_limit_buy_order(
-#             'ETH/BTC', '0.01', '0.014')
-#         return {
-#             'status': 'success',
-#             'message': 'order placed',
-#         }
-#     except Exception as e:
-#         return return_response('error', str(e), 'Order error')
+        return {
+            'status': 'success',
+            'message': 'order placed',
+        }
+    except Exception as e:
+        return return_response('error', str(e), 'Order error')
 
 # def get_account_balance():  # TODO pass exchange?
 #     try:
@@ -112,21 +124,21 @@ def determine_account(data):
 #         return return_response('error', str(e))
 
 
-def test_binance():
+def test_binance(exchange):
     # Test exchange info
     # for exchange in ccxt.exchanges:
     #     print(exchange)
 
-    exchange_binance = ccxt.binance()
+    # exchange_binance = ccxt.binance()
     # exchange_binance.set_sandbox_mode(True)  # SANDBOX MODE
-    exchange_coinbasepro = ccxt.coinbasepro()
+    # exchange_coinbasepro = ccxt.coinbasepro()
 
-    markets = exchange_binance.load_markets()
+    markets = exchange.load_markets()
     for market in markets:
         if 'BTC' in market:
             print(market)
 
-    ohlc_binance = exchange_binance.fetch_ohlcv(
+    ohlc_binance = exchange.fetch_ohlcv(
         'BTC/USDT', timeframe='1m', limit=5)
     for candle in ohlc_binance:
         print(candle)
