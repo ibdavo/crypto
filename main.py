@@ -21,8 +21,12 @@ def trade(request):
             return_response('success', "test_account", 'Account test!')
         except Exception as e:
             return return_response('error', str(e), "Determine account failed")
-
+        
+        print('test binance...')
         test_binance(exchange)
+        print('test balance...')
+        fetch_balance(exchange)
+        # return order(exchange)
         return return_response('success', 'account determined')
         # return get_account_balance()
         # return get_accounts()
@@ -54,15 +58,9 @@ def determine_account(data):
     if config.accounts[data['account']][data['exchange']][data['account_type']] is None:
         raise Exception('Account exchange account_type is missing of invalid')
 
-    # api_key = config.accounts[data['account']][data['exchange']][data['account_type']][data["api_key"]]
-    # secret = config.accounts[data['account']][data['exchange']][data['account_type']][data["secret"]]
-
-    print(config.accounts[data['account']][data['exchange']][data['account_type']]['api_key'])
-    print(config.accounts[data['account']][data['exchange']][data['account_type']]['api_key'])
     # print('secret: ' + secret)
     if 'binanceus' in config.accounts[data['account']]: 
         print("binance us...")
-    # if config.accounts[data['account']][data['exchange']] == 'binanceus':
         try: 
             exchange = ccxt.binanceus({
                 'apiKey' : config.accounts[data['account']][data['exchange']][data['account_type']]['api_key'],
@@ -77,11 +75,40 @@ def determine_account(data):
     print("exchange:")    
     return exchange
     
+def fetch_balance(exchange):
+    try:
+        balance = exchange.fetchBalance()
+        print(balance)
+        print('balance retrieved')
+    except Exception as e:
+        print('error in balance ' + str(e))
+        return return_response('error', str(e), 'Account balance failed')
 
 def order(exchange):
     try:
-        limit_order = exchange.create_limit_buy_order(
-            'ETH/BTC', '0.01', '0.014')
+        print("order...")
+        symbol = 'ETH/USDT'
+        exchange.market(symbol)
+        price = 2601
+        response = exchange.private_post_order_oco({
+            'symbol': 'BTC/USDT',
+            'side': 'BUY',  # SELL, BUY
+            'quantity': exchange.amount_to_precision(symbol, .001278),
+            # 'price': exchange.price_to_precision(symbol, price),
+            'stopPrice': exchange.price_to_precision(symbol, price * 1.02),
+            'stopLimitPrice': exchange.price_to_precision(symbol, price * .98),  # If provided, stopLimitTimeInForce is required
+            'stopLimitTimeInForce': 'GTC',  # GTC, FOK, IOC
+            # 'listClientOrderId': exchange.uuid(),  # A unique Id for the entire orderList
+            # 'limitClientOrderId': exchange.uuid(),  # A unique Id for the limit order
+            # 'limitIcebergQty': exchangea.amount_to_precision(symbol, limit_iceberg_quantity),
+            # 'stopClientOrderId': exchange.uuid()  # A unique Id for the stop loss/stop loss limit leg
+            # 'stopIcebergQty': exchange.amount_to_precision(symbol, stop_iceberg_quantity),
+            # 'newOrderRespType': 'ACK',  # ACK, RESULT, FULL
+        })
+        print('response...')
+        print(response)        
+        # limit_order = exchange.create_limit_buy_order(
+        #     'ETH/BTC', '0.01', '0.014')
         
         return {
             'status': 'success',
@@ -133,13 +160,14 @@ def test_binance(exchange):
     # exchange_binance.set_sandbox_mode(True)  # SANDBOX MODE
     # exchange_coinbasepro = ccxt.coinbasepro()
 
-    markets = exchange.load_markets()
-    for market in markets:
-        if 'BTC' in market:
-            print(market)
-
+    # markets = exchange.load_markets()
+    # print(markets)
+    # for market in markets:
+    #     if 'ETH' in market:
+    #         print(market)
+    # print 5 last prices
     ohlc_binance = exchange.fetch_ohlcv(
-        'BTC/USDT', timeframe='1m', limit=5)
+        'ETH/USDT', timeframe='1m', limit=5)
     for candle in ohlc_binance:
         print(candle)
     # unixtimestamp.com
