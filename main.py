@@ -141,6 +141,7 @@ def order(exchange, data):
         exchange.load_markets()
         side = data['side']
         price = float(data['price'])
+        print("price " + str(price))
         pct_profit = (float(data['pct_profit']) / 100)
         stop_loss = (float(data['stop_loss']) / 100)
         if side.lower() == 'buy':  # TODO ternary
@@ -151,15 +152,15 @@ def order(exchange, data):
             stop_loss = float(1 + stop_loss)
 
         print("setting params <test> ...")
-        # params = {
-        #     'test': True,  # test if it's valid, but don't actually place it
-        # }        # Build order
+        params = {
+            'test': True,  # test if it's valid, but don't actually place it
+        }        # Build order
         print("build json...")
         json_order = {
             'symbol': symbol,
             'side': side,
             'quantity': exchange.amount_to_precision(data['symbol'], qty),
-            'price': exchange.price_to_precision(symbol, price),
+            'price': price,  # exchange.price_to_precision(symbol, price),
             'stopPrice': exchange.price_to_precision(symbol, price * pct_profit),
             'stopLimitPrice': exchange.price_to_precision(symbol, price * stop_loss),
             'stopLimitTimeInForce': 'GTC',
@@ -173,7 +174,7 @@ def order(exchange, data):
         # 'newOrderRespType': 'ACK',  # ACK, RESULT, FULL
 
         # Transmit order
-        # print("JSON Order: {}".format(json.dumps(json_order)))
+        print("JSON Order: {}".format(json.dumps(json_order)))
 
         # params = {
         #     'test': True,
