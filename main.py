@@ -154,16 +154,16 @@ def order(exchange, data):
         # params = {
         #     'test': True,  # test if it's valid, but don't actually place it
         # }        # Build order
-        # print("build json...")
-        # json_order = {
-        #     'symbol': symbol,
-        #     'side': side,
-        #     'quantity': exchange.amount_to_precision(data['symbol'], qty),
-        #     'price': exchange.price_to_precision(symbol, price),
-        #     'stopPrice': exchange.price_to_precision(symbol, price * pct_profit),
-        #     'stopLimitPrice': exchange.price_to_precision(symbol, price * stop_loss),
-        #     'stopLimitTimeInForce': 'GTC',
-        # }
+        print("build json...")
+        json_order = {
+            'symbol': symbol,
+            'side': side,
+            'quantity': exchange.amount_to_precision(data['symbol'], qty),
+            'price': exchange.price_to_precision(symbol, price),
+            'stopPrice': exchange.price_to_precision(symbol, price * pct_profit),
+            'stopLimitPrice': exchange.price_to_precision(symbol, price * stop_loss),
+            'stopLimitTimeInForce': 'GTC',
+        }
         # If provided, stopLimitTimeInForce is required
         # 'listClientOrderId': exchange.uuid(),  # A unique Id for the entire orderList
         # 'limitClientOrderId': exchange.uuid(),  # A unique Id for the limit order
@@ -175,16 +175,16 @@ def order(exchange, data):
         # Transmit order
         # print("JSON Order: {}".format(json.dumps(json_order)))
 
-        params = {
-            'test': True,
-            'stopPrice': exchange.price_to_precision(symbol, price * pct_profit),
-            'type': 'stopLimit'
-        }
+        # params = {
+        #     'test': True,
+        #     'stopPrice': exchange.price_to_precision(symbol, price * pct_profit),
+        #     'type': 'stopLimit'
+        # }
 
-        order = exchange.create_order(
-            symbol=symbol, type='limit', side=side, amount=qty, price=price, params=params)
+        # order = exchange.create_order(
+        #     symbol=symbol, type='STOP_LOSS_LIMIT', side=side, amount=qty, price=price, params=params)
 
-        # order = exchange.private_post_order_oco(json_order)
+        order = exchange.private_post_order_oco(json_order)
         # order = exchange.create_market_sell_order(symbol, .001)
         print('order response...')
         print(order)
